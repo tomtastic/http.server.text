@@ -41,20 +41,19 @@ class TextHandler(SimpleHTTPRequestHandler):
             else:
                 return self.list_directory(path)
         ctype = self.guess_type(path)
-        # Always read in binary mode. Opening files in text mode may cause
-        # newline translations, making the actual size of the content
-        # transmitted *less* than the content-length!
-
         try:
-            with open(path, "rb") as filehandle:
-                self.send_response(200)
-                self.send_header("Content-type", ctype)
-                fstat = os.fstat(filehandle.fileno())
-                self.send_header("Content-Length", str(fstat[6]))
-                self.send_header("Last-Modified", self.date_time_string(fstat.st_mtime))
-                self.end_headers()
-                return filehandle
-        except IOError:
+            # Always read in binary mode. Opening files in text mode may cause
+            # newline translations, making the actual size of the content
+            # transmitted *less* than the content-length!
+            filehandle = open(path, "rb")  # pylint: disable=consider-using-with
+            self.send_response(200)
+            self.send_header("Content-type", ctype)
+            fstat = os.fstat(filehandle.fileno())
+            self.send_header("Content-Length", str(fstat[6]))
+            self.send_header("Last-Modified", self.date_time_string(fstat.st_mtime))
+            self.end_headers()
+            return filehandle
+        except EnvironmentError:
             self.send_error(404, "File not found")
             return None
 
